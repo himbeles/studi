@@ -1,14 +1,26 @@
 # studi - Apple Studio Display Brightness Control
 
-(Forked from `juliuszint/asdbctl`, 2025/3)
-
-## Overview
 This tool allows for changing the brightness of one or more Apple Studio Display(s) attached to a Linux or Windows PC.
 
+*Forked from `juliuszint/asdbctl` in March 2025, with addded UI*
+
+## Getting Started
+
+A **compiled Windows executable** is attached to [release notes](https://github.com/himbeles/studi/releases/tag/v1.0.1).
+
+Alternatively, compile using Rust:
+
+```bash
+git clone https://github.com/himbeles/studi.git && cd studi
+# either just run from here
+cargo run --release -- help
+# or install with
+cargo install --path .
+```
 
 ## Usage
 
-### As command line utility:
+As command line utility:
 
 ```sh
 Tool to get or set the brightness for Apple Studio Displays. Launches UI if no command is given.
@@ -30,19 +42,6 @@ Options:
 
 It offers a UI if launched without any subcommands.
 
-## Getting Started
-
-A compiled Windows executable is attached to [release notes](https://github.com/himbeles/studi/releases/tag/v1.0.1).
-
-Alternatively, compile using Rust:
-
-```bash
-git clone https://github.com/himbeles/studi.git && cd studi
-# either just run from here
-cargo run --release -- help
-# or install with
-cargo install --path .
-```
 
 ## Troubleshooting
 
