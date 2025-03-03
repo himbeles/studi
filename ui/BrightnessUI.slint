@@ -1,0 +1,32 @@
+import { Slider, VerticalBox } from "std-widgets.slint";
+        export component BrightnessUI inherits Window {
+            title: "Studio Display";
+            width: 400px;
+            height: 100px;
+
+            // Declare a callback to be used from Rust.
+            callback brightness_changed(new_value: float);
+            in-out property<float> brightness;
+            VerticalLayout {
+                padding: 20px;
+                spacing: 10px;
+                Text {
+                    text: "Brightness: \{round(brightness)} %";
+                }
+
+                Slider {
+                    minimum: 0;
+                    maximum: 100;
+                    value: brightness;
+                    //When the slider changes, update the property and invoke the callback.
+                    changed(value) => {
+                        brightness = value;
+                    }
+                    released(value) => {
+                        brightness = value;
+                        brightness_changed(value);
+                    }
+                }
+
+            }
+        }

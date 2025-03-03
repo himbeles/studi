@@ -1,9 +1,8 @@
 [package]
-name = "asdbctl"
+name = "studio_display_brightness"
 version = "1.0.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+build = "build.rs"
 
 [dependencies]
 hidapi = "2.6.3"
@@ -13,3 +12,7 @@ clap-num = "1.0.2"
 regex = "1.10.6"
 log = "0.4.22"
 stderrlog = "0.6.0"
+slint = "1.10.0"
+
+[build-dependencies]
+slint-build = "1.10.0"
