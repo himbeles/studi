@@ -2,7 +2,7 @@
 
 This tool allows for changing the brightness of one or more Apple Studio Display(s) attached to a Linux or Windows PC.
 
-*Forked from `juliuszint/asdbctl` in March 2025, with addded UI*
+*Forked from `juliuszint/asdbctl` in March 2025, with added UI*
 
 ## Getting Started
 
@@ -20,7 +20,7 @@ cargo install --path .
 
 ## Usage
 
-As command line utility:
+As a command line utility:
 
 ```sh
 Tool to get or set the brightness for Apple Studio Displays. Launches UI if no command is given.
@@ -41,7 +41,6 @@ Options:
 ```
 
 It offers a UI if launched without any subcommands.
-
 
 ## Troubleshooting
 
