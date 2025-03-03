@@ -4612,7 +4612,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "studio_display_brightness"
+name = "studi"
 version = "1.0.0"
 dependencies = [
  "clap",
