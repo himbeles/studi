@@ -68,7 +68,8 @@ fn studio_displays(hapi: &HidApi) -> Result<Vec<&hidapi::DeviceInfo>, Box<dyn Er
 
 fn cli() -> Command {
     Command::new("asdbctl")
-        .about("Tool to get or set the brightness for Apple Studio Displays")
+        .about("Tool to get or set the brightness for Apple Studio Displays. Launches UI if no command is given.")
+        
         // The serial option is defined at the root so it applies to any subcommand.
         .arg(arg!(-s --serial <SERIAL> "Serial number of the display for which to adjust the brightness"))
         .arg(arg!(-v --verbose ... "Turn debugging information on"))
@@ -102,7 +103,6 @@ fn cli() -> Command {
                 )
                 .about("Decrease the brightness"),
         )
-        .subcommand(Command::new("gui").about("Launch Windows taskbar interface with brightness slider"))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
