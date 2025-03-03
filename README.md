@@ -32,7 +32,7 @@ It offers a UI if launched without any subcommands.
 
 ## Getting Started
 
-Compiled Windows executable is attached to [release note]().
+A compiled Windows executable is attached to [release notes](https://github.com/himbeles/studi/releases/tag/v1.0.1).
 
 Alternatively, compile using Rust:
 
