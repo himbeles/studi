@@ -18,11 +18,8 @@ import { Slider, VerticalBox } from "std-widgets.slint";
                     minimum: 0;
                     maximum: 100;
                     value: brightness;
-                    //When the slider changes, update the property and invoke the callback.
+                    // Update the display as the slider moves, without waiting for release.
                     changed(value) => {
-                        brightness = value;
-                    }
-                    released(value) => {
                         brightness = value;
                         brightness_changed(value);
                     }
