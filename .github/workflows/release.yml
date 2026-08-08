@@ -1,0 +1,106 @@
+name: Windows release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.85.0"
+  WINDOWS_TARGET: x86_64-pc-windows-msvc
+
+jobs:
+  build-windows:
+    name: Build Windows x86-64
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+
+      - name: Install pinned Rust toolchain
+        shell: pwsh
+        run: rustup toolchain install $env:RUST_TOOLCHAIN --profile minimal --target $env:WINDOWS_TARGET
+
+      - name: Verify release tag matches Cargo version
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $metadata = cargo +$env:RUST_TOOLCHAIN metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
+          $expectedTag = "v$($metadata.packages[0].version)"
+          if ($env:RELEASE_TAG -ne $expectedTag) {
+            throw "Release tag '$env:RELEASE_TAG' does not match Cargo version '$expectedTag'."
+          }
+
+      - name: Run tests
+        shell: pwsh
+        run: cargo +$env:RUST_TOOLCHAIN test --locked --target $env:WINDOWS_TARGET
+
+      - name: Build release executable
+        shell: pwsh
+        run: cargo +$env:RUST_TOOLCHAIN build --release --locked --target $env:WINDOWS_TARGET
+
+      - name: Smoke-test executable
+        shell: pwsh
+        run: |
+          $executable = "target/$env:WINDOWS_TARGET/release/studi.exe"
+          $process = Start-Process -FilePath $executable -ArgumentList "--version" -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "studi.exe --version exited with code $($process.ExitCode)."
+          }
+
+      - name: Package executable and checksum
+        shell: pwsh
+        run: |
+          $metadata = cargo +$env:RUST_TOOLCHAIN metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
+          $version = $metadata.packages[0].version
+          $assetBase = "studi-v$version-windows-x86_64"
+          $staging = "dist/$assetBase"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "target/$env:WINDOWS_TARGET/release/studi.exe" $staging
+          Copy-Item README.md $staging
+          Copy-Item LICENSE $staging
+          Compress-Archive -Path "$staging/*" -DestinationPath "dist/$assetBase.zip"
+          $hash = (Get-FileHash "dist/$assetBase.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $assetBase.zip" | Set-Content "dist/$assetBase.zip.sha256" -NoNewline
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+
+  publish-assets:
+    name: Attach assets to release
+    if: github.event_name == 'release'
+    needs: build-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows assets
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-x86_64
+          path: dist
+
+      - name: Attach assets to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
