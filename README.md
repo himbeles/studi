@@ -13,7 +13,7 @@ Alternatively, compile using Rust:
 ```bash
 git clone https://github.com/himbeles/studi.git && cd studi
 # either just run from here
-cargo run --release -- help
+cargo run --release
 # or install with
 cargo install --path .
 ```
