@@ -104,3 +104,37 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+
+  publish-v1-1-0:
+    name: Publish v1.1.0
+    if: github.event_name == 'push' && github.event.head_commit.message == 'Publish v1.1.0 from Windows CI'
+    needs: build-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows assets
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-x86_64
+          path: dist
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: |
+            ## Highlights
+
+            - Added support for Apple Studio Display XDR and the 2026 Studio Display models.
+            - Added Windows x86-64 release builds with SHA-256 checksums.
+            - Fixed the `up` command so it increases brightness and caps at 100%.
+            - Added automated tests and reproducible release tooling.
+
+            **Windows x86-64:** Download `studi-v1.1.0-windows-x86_64.zip`.
+        run: |
+          gh release create v1.1.0 dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "v1.1.0" \
+            --notes "$RELEASE_NOTES"
