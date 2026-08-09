@@ -50,13 +50,24 @@ fn set_brightness(handle: &mut hidapi::HidDevice, brightness: u32) -> Result<(),
     Ok(())
 }
 
-fn set_brightness_percent(handle: &mut hidapi::HidDevice, brightness: u8) -> Result<(), Box<dyn Error>> {
+fn set_brightness_percent(
+    handle: &mut hidapi::HidDevice,
+    brightness: u8,
+) -> Result<(), Box<dyn Error>> {
     let nits =
         ((brightness as f32 * BRIGHTNESS_RANGE as f32) / 100.0 + MIN_BRIGHTNESS as f32) as u32;
     let nits = std::cmp::min(nits, MAX_BRIGHTNESS);
     let nits = std::cmp::max(nits, MIN_BRIGHTNESS);
     set_brightness(handle, nits)?;
     Ok(())
+}
+
+fn increase_brightness(brightness: u8, step: u8) -> u8 {
+    brightness.saturating_add(step).min(100)
+}
+
+fn decrease_brightness(brightness: u8, step: u8) -> u8 {
+    brightness.saturating_sub(step)
 }
 
 fn studio_displays(hapi: &HidApi) -> Result<Vec<&hidapi::DeviceInfo>, Box<dyn Error>> {
@@ -71,9 +82,10 @@ fn studio_displays(hapi: &HidApi) -> Result<Vec<&hidapi::DeviceInfo>, Box<dyn Er
 }
 
 fn cli() -> Command {
-    Command::new("asdbctl")
+    Command::new("studi")
+        .version(env!("CARGO_PKG_VERSION"))
         .about("Tool to get or set the brightness for Apple Studio Displays. Launches UI if no command is given.")
-        
+
         // The serial option is defined at the root so it applies to any subcommand.
         .arg(arg!(-s --serial <SERIAL> "Serial number of the display for which to adjust the brightness"))
         .arg(arg!(-v --verbose ... "Turn debugging information on"))
@@ -112,7 +124,11 @@ fn cli() -> Command {
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = cli().get_matches();
     let verbosity = *matches.get_one::<u8>("verbose").unwrap_or(&0) as usize;
-    stderrlog::new().module(module_path!()).verbosity(verbosity).init().unwrap();
+    stderrlog::new()
+        .module(module_path!())
+        .verbosity(verbosity)
+        .init()
+        .unwrap();
 
     // If no subcommand is provided, launch the GUI.
     if matches.subcommand().is_none() {
@@ -152,20 +168,38 @@ fn main() -> Result<(), Box<dyn Error>> {
             Some(("up", sub_matches)) => {
                 let step = *sub_matches.get_one::<u8>("step").expect("required");
                 let brightness = get_brightness_percent(&mut handle)?;
-                let new_brightness = std::cmp::max(0, brightness as i32 - step as i32) as u8;
+                let new_brightness = increase_brightness(brightness, step);
                 set_brightness_percent(&mut handle, new_brightness)?;
             }
             Some(("down", sub_matches)) => {
                 let step = *sub_matches.get_one::<u8>("step").expect("required");
                 let brightness = get_brightness_percent(&mut handle)?;
-                // Use saturating_sub to prevent underflow.
-                let new_brightness = brightness.saturating_sub(step);
+                let new_brightness = decrease_brightness(brightness, step);
                 set_brightness_percent(&mut handle, new_brightness)?;
             }
             _ => unreachable!(),
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{decrease_brightness, increase_brightness};
+
+    #[test]
+    fn increases_brightness_and_caps_at_100_percent() {
+        assert_eq!(increase_brightness(40, 10), 50);
+        assert_eq!(increase_brightness(95, 10), 100);
+        assert_eq!(increase_brightness(100, 10), 100);
+    }
+
+    #[test]
+    fn decreases_brightness_and_floors_at_zero_percent() {
+        assert_eq!(decrease_brightness(40, 10), 30);
+        assert_eq!(decrease_brightness(5, 10), 0);
+        assert_eq!(decrease_brightness(0, 10), 0);
+    }
 }
 
 //
@@ -177,7 +211,6 @@ mod gui {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-
     slint::include_modules!();
 
     // Launch the GUI.
@@ -185,7 +218,6 @@ mod gui {
     // opens the device handle, reads the initial brightness, and creates the UI.
     // When the slider is moved, the brightness is updated.
     pub fn launch_gui(serial: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-        
         let hapi = HidApi::new()?;
         let displays = studio_displays(&hapi)?;
         if displays.is_empty() {
@@ -195,7 +227,9 @@ mod gui {
             .into_iter()
             .find(|d| {
                 if let Some(ref serial_filter) = serial {
-                    d.serial_number().map(|s| s == serial_filter).unwrap_or(false)
+                    d.serial_number()
+                        .map(|s| s == serial_filter)
+                        .unwrap_or(false)
                 } else {
                     true
                 }
@@ -219,7 +253,9 @@ mod gui {
         // the display brightness is updated.
         ui.on_brightness_changed(move |new_value: f32| {
             let new_value_u8 = new_value as u8;
-            if let Err(e) = set_brightness_percent(&mut handle_for_callback.borrow_mut(), new_value_u8) {
+            if let Err(e) =
+                set_brightness_percent(&mut handle_for_callback.borrow_mut(), new_value_u8)
+            {
                 eprintln!("Failed to set brightness: {:?}", e);
             }
         });

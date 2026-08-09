@@ -6,7 +6,7 @@ This tool allows for changing the brightness of one or more Apple Studio Display
 
 ## Getting Started
 
-A **compiled Windows executable** is attached to [release notes](https://github.com/himbeles/studi/releases/tag/v1.0.1).
+A **compiled Windows executable** is attached to the [latest release](https://github.com/himbeles/studi/releases/latest).
 
 Alternatively, compile using Rust:
 
@@ -25,7 +25,7 @@ As a command line utility:
 ```sh
 Tool to get or set the brightness for Apple Studio Displays. Launches UI if no command is given.
 
-Usage: studio_display_brightness [OPTIONS] [COMMAND]
+Usage: studi [OPTIONS] [COMMAND]
 
 Commands:
   get   Get the current brightness in %
@@ -37,6 +37,7 @@ Commands:
 Options:
   -s, --serial <SERIAL>  Serial number of the display for which to adjust the brightness
   -v, --verbose...       Turn debugging information on
+  -V, --version          Print version
   -h, --help             Print help
 ```
 
