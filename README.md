@@ -10,6 +10,52 @@ A **compiled Windows executable** is attached to the [latest release](https://gi
 
 Alternatively, compile using Rust:
 
+### Dependencies
+
+Building needs a Rust toolchain, and on Linux also a C compiler, `pkg-config`, and the `libudev` development files (the `hidapi` crate uses these to build its native Linux backend). Slint's GUI backend loads Wayland/X11/OpenGL at runtime via `dlopen`, so no extra `-devel` packages are needed for the UI itself.
+
+<details>
+<summary>Windows</summary>
+
+Install Rust via [rustup](https://rustup.rs) — it will prompt you to also install the MSVC C++ Build Tools (Visual Studio's "Desktop development with C++" workload) if they're missing. These are required because the `hidapi` crate compiles a small vendored C source file on Windows too, using a C compiler.
+</details>
+
+<details>
+<summary>Fedora / RHEL</summary>
+
+```bash
+sudo dnf install gcc pkgconf-pkg-config systemd-devel rust cargo
+```
+
+On RHEL (and derivatives like Rocky/Alma), `rust`/`cargo` may require enabling the CodeReady Builder (`crb`) or AppStream repo first.
+</details>
+
+<details>
+<summary>Debian / Ubuntu</summary>
+
+```bash
+sudo apt install build-essential pkg-config libudev-dev cargo
+```
+</details>
+
+<details>
+<summary>Arch</summary>
+
+```bash
+sudo pacman -S base-devel pkgconf systemd rust
+```
+</details>
+
+<details>
+<summary>openSUSE</summary>
+
+```bash
+sudo zypper install gcc pkg-config libudev-devel rust cargo
+```
+</details>
+
+On any distro not listed above, install Rust via [rustup](https://rustup.rs) and use your package manager to install a C compiler, `pkg-config`, and the `libudev` development package.
+
 ```bash
 git clone https://github.com/himbeles/studi.git && cd studi
 # either just run from here
@@ -45,7 +91,26 @@ It offers a UI if launched without any subcommands.
 
 ## Troubleshooting
 
-In case regular users are not allowed to access raw HID devices, you can use the udev rule in the `rules.d` directory.
+### Linux: display not found / permission denied
+
+By default, non-root users can't access raw HID devices on Linux, so `studi` may fail to find or control the display unless a udev rule grants access. Install the rule shipped in `rules.d/20-asd-backlight.rules`:
+
+```bash
+sudo install -m 0644 rules.d/20-asd-backlight.rules /etc/udev/rules.d/20-asd-backlight.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Then unplug and reconnect the Studio Display (or reboot) so udev re-evaluates it with the new rule.
+
+To verify it took effect, find the device and check its ACL:
+
+```bash
+ls -l /dev/hidraw*
+getfacl /dev/hidrawN   # replace N with the device found above
+```
+
+You should see access granted to your user via the `uaccess` tag — this grants the currently logged-in user read/write access directly, no group membership needed.
 
 ## Technical Details
 
