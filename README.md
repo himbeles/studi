@@ -15,6 +15,12 @@ Alternatively, compile using Rust:
 Building needs a Rust toolchain, and on Linux also a C compiler, `pkg-config`, and the `libudev` development files (the `hidapi` crate uses these to build its native Linux backend). Slint's GUI backend loads Wayland/X11/OpenGL at runtime via `dlopen`, so no extra `-devel` packages are needed for the UI itself.
 
 <details>
+<summary>Windows</summary>
+
+Install Rust via [rustup](https://rustup.rs) — it will prompt you to also install the MSVC C++ Build Tools (Visual Studio's "Desktop development with C++" workload) if they're missing. These are required because the `hidapi` crate compiles a small vendored C source file on Windows too, using a C compiler.
+</details>
+
+<details>
 <summary>Fedora / RHEL</summary>
 
 ```bash
